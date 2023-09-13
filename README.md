@@ -1,5 +1,7 @@
 # terraform-provisions-examples
 Terraform Provisions examples for AWS , GCP and Azure
+![image](https://github.com/joelwembo/terraform-multi-cloud-provisions/assets/19718580/397d75d4-2d8c-4e87-850d-f812bce7ef89)
+
 
 Usage: terraform [global options] <subcommand> [args]
 
@@ -38,6 +40,8 @@ Global options (use these before the subcommand, if any):
   -chdir=DIR    Switch to a different working directory before executing the
 
 # VPC
+![image](https://github.com/joelwembo/terraform-multi-cloud-provisions/assets/19718580/7743ffd6-d669-40ae-b7ab-2b63304fd350)
+
 
   Amazon Virtual Private Cloud (Amazon VPC) gives you full control over your virtual networking environment, including resource placement, connectivity, and security. Get started by setting up your VPC in the AWS service console. Next, add resources to it such as Amazon Elastic Compute Cloud (EC2) and Amazon Relational Database Service (RDS) instances. Finally, define how your VPCs communicate with each other across accounts, Availability Zones, or AWS Regions. In the example below, network traffic is being shared between two VPCs within each Region.
 
