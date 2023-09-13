@@ -1,11 +1,11 @@
 # Configure the Azure Provider
 provider "azurerm" {
   skip_provider_registration = "true"
-  subscription_id = "c84ab816-ca50-49a5-a6b4-7605de31a465"
-#   subscription_id = "af709789-8cf1-4df7-a477-fff69de81b27"
-  client_id       = "f603b0c5-55bc-4e60-9c63-48877b50d002"
-  client_secret   = "VMA8Q~3BpLT1fp2PeSSxJhbAXC5lV6t0KgENgblp"
-  tenant_id       = "6b37dcac-b50f-4e3d-baf1-d2040633c9d1"
+  subscription_id = ""
+#   subscription_id = ""
+  client_id       = ""
+  client_secret   = ""
+  tenant_id       = "6b37dcac-xxxxxx"
   features {
     
   }
