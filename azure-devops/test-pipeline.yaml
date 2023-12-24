@@ -1,0 +1,47 @@
+trigger: none
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: A
+  jobs:
+  - deployment: JA
+    environment: 'IaCDevEnvironment'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: PowerShell@2
+            name: DetermineResult
+            inputs:
+              targetType: inline
+              script: |
+                write-host "This is job Foo."
+                $yes = "Yes!"
+                write-host "##vso[task.setvariable variable=doThing;isOutput=true]$yes" #The variable doThing is set to true
+
+          - script: echo $(DetermineResult.doThing)
+            name: echovar
+
+- stage: B
+  dependsOn: A
+  variables:
+      varFromStageA: $[ stageDependencies.A.JA.outputs['JA.DetermineResult.doThing'] ]
+  jobs:
+  - deployment: JB
+    environment: 'IaCDevEnvironment'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - bash: echo "Hello world stage B first job"
+          - script: echo $(varFromStageA)
+          - task: PowerShell@2
+            name: DetermineResult
+            inputs:
+              targetType: inline
+              script: |
+                write-host "This is job Foo."
+                write-host $(varFromStageA)

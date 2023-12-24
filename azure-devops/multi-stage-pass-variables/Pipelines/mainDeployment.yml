@@ -1,0 +1,136 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - multi-stage-pass-variables
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ModulesFolderPath: $(Build.SourcesDirectory)/multi-stage-pass-variables/Bicep
+  ParameterFilesFolderPath: $(Build.SourcesDirectory)/multi-stage-pass-variables/Pipelines
+
+  NonProdSubscriptionId: 'f0e483fc-9d2f-4a4b-8aee-887a398ff27e'
+  NonProdAzureResourceManagerConnection: 'Azure MVP Sponsorship'
+
+  ProdSubscriptionId: 'f0e483fc-9d2f-4a4b-8aee-887a398ff27e'
+  ProdAzureResourceManagerConnection: 'Azure MVP Sponsorship'
+
+stages:
+- stage: 'PublishTemplates'
+  displayName: 'PublishTemplates'
+
+  variables:
+    MainBicepFilePath: '${{ variables.ModulesFolderPath }}/mainDeployment.bicep'
+    MainTemplateFilePath: '${{ variables.ModulesFolderPath }}/mainDeployment.json'
+    MainTemplateTestParameterFilePath: '${{ variables.ParameterFilesFolderPath }}/parameters.dev.json'
+
+  jobs:
+    - job: PublishTemplates
+      displayName: Publish Templates
+
+      steps:
+        - checkout: self
+          path: src
+
+        - task: PowerShell@2
+          displayName: Bicep Build
+          inputs:
+            targetType: 'inline'
+            script: |
+              az bicep build --file ${{ variables.MainBicepFilePath }}
+            pwsh: true
+
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: Validate ARM Template
+          inputs:
+            azureResourceManagerConnection: ${{ variables.NonProdAzureResourceManagerConnection }}
+            deploymentScope: 'Subscription'
+            subscriptionId: '${{ variables.NonProdSubscriptionId }}'
+            location: 'West Europe'
+            templateLocation: 'Linked artifact'
+            csmFile: '${{ variables.MainTemplateFilePath }}'
+            csmParametersFile: '${{ variables.MainTemplateTestParameterFilePath }}'
+            deploymentMode: 'Validation'
+
+        - task: CopyFiles@2
+          displayName: 'Copy templates to $(build.artifactstagingdirectory)/templates'
+          inputs:
+            SourceFolder: ${{ variables.ModulesFolderPath }}
+            Contents: '*.json'
+            TargetFolder: '$(build.artifactstagingdirectory)/templates'
+
+        - task: CopyFiles@2
+          displayName: 'Copy parameters to $(build.artifactstagingdirectory)/templates'
+          inputs:
+            SourceFolder: ${{ variables.ParameterFilesFolderPath }}
+            Contents: '*.json'
+            TargetFolder: '$(build.artifactstagingdirectory)/templates'
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifact: drop'
+
+- stage: DeployDev
+
+  displayName: Deploy template to dev environment
+  jobs:
+    - deployment: DeployResources
+      environment: 'IaCDevEnvironment'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - template: resourcesDeployment.yml
+              parameters:
+                SubscriptionId: ${{ variables.NonProdSubscriptionId }}
+                Location: West Europe
+                AzureResourceManagerConnection: ${{ variables.NonProdAzureResourceManagerConnection }}
+                Environment: 'dev'
+
+- stage: DeployProd
+
+  variables:
+  - name: devKubeletPrincipalId
+    value: $[ stageDependencies.DeployDev.DeployResources.outputs['DeployResources.SetOutputs.kubeletPrincipalId'] ]
+
+  displayName: Deploy template to prod environment
+  jobs:
+  - deployment:
+    environment: 'IaCProdEnvironment'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - template: resourcesDeployment.yml
+            parameters:
+              SubscriptionId: ${{ variables.ProdSubscriptionId }}
+              Location: West Europe
+              AzureResourceManagerConnection: ${{ variables.ProdAzureResourceManagerConnection }}
+              Environment: 'prod'
+
+          - task: AzureCLI@2
+            displayName: Role assignments on ACR
+            inputs:
+              azureSubscription: ${{ variables.ProdAzureResourceManagerConnection }}
+              scriptType: pscore
+              scriptLocation: inlineScript
+              addSpnToEnvironment: true
+              inlineScript: |
+                $armOutputObj = $env:MAINDEPLOYMENTS_OUTPUTS | convertfrom-json
+                write-host "prod ID"
+                write-host $armOutputObj.kubeletIdentityPrincipalId.value
+
+                write-host "Dev ID"
+                write-host $(devKubeletPrincipalId)
+
+                write-host "ACR ID"
+                write-host $armOutputObj.acrId.value
+
+                az role assignment create --role "AcrPull" --assignee-object-id $(devKubeletPrincipalId) --scope $armOutputObj.acrId.value --assignee-principal-type ServicePrincipal
+                az role assignment create --role "AcrPull" --assignee-object-id $armOutputObj.kubeletIdentityPrincipalId.value --scope $armOutputObj.acrId.value --assignee-principal-type ServicePrincipal
