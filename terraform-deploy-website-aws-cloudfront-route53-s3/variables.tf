@@ -9,8 +9,8 @@ variable "domain-name" {
 }
 
 variable "AWS_ACCESS_KEY_ID" {
-  default = "AKIAYZITHA4UUEUQFMY7"
+  default = ""
 }
 variable "AWS_SECRET_ACCESS_KEY" {
-  default = "Rpl5cB3xa47YLMusgm/84e0wNVHudMF4llQpTi6k"
+  default = ""
 }

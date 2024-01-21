@@ -14,10 +14,10 @@ variable "backend_worspaces" {
 }
 
 variable "access_key" {
-  default = "AKIAYZITHA4UUEUQFMY7"
+  default = ""
 }
 variable "secret_key" {
-  default = "Rpl5cB3xa47YLMusgm/84e0wNVHudMF4llQpTi6k"
+  default = ""
 }
 
 variable "bucket" {
