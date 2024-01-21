@@ -3,7 +3,7 @@
 sam package --template-file template.yaml --output-template-file deploy.yaml --s3-bucket $SAM_CODE_BUCKET
 
 
->sam package --template-file template.yaml --output-template-file deploy.yaml --s3-bucket prodxcloud-terraform-state
+>sam package --template-file template.yaml --output-template-file deploy.yaml --s3-bucket cloudapp-terraform-state
         Uploading to 823a67346e42ff8e68d81d8c3e069934  1412112 / 1412112  (100.00%)
         Uploading to c19477640ae82382c23af8c9f5937a93  868 / 868  (100.00%)
         Uploading to 1a265dc3297bf39f7edd961edf2a5e24  715 / 715  (100.00%)
